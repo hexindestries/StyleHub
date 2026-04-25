@@ -112,122 +112,123 @@
   </main>
 
   <script>
-    function loadProducts() {
-      const productsStr = localStorage.getItem("stylehub_products");
-      return productsStr ? JSON.parse(productsStr) : [];
+   <!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDyJw-dYYcd1i02YVBkrTrqD01tF--w00",
+    authDomain: "stylehub-7fb69.firebaseapp.com",
+    projectId: "stylehub-7fb69",
+    storageBucket: "stylehub-7fb69.firebasestorage.app",
+    messagingSenderId: "1051134155130",
+    appId: "1:1051134155130:web:39dfb1b9171b7911c15ec3",
+    measurementId: "G-LZNG900PQ4"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const fileInput = document.getElementById("product-images-upload");
+  const preview = document.getElementById("image-preview");
+
+  // 🔄 PREVIEW IMAGES (same as before)
+  fileInput.addEventListener("change", function() {
+    preview.innerHTML = "";
+    Array.from(fileInput.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // 🔥 ADD PRODUCT (NOW SAVES TO FIREBASE)
+  document.getElementById("product-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById("product-name").value.trim();
+    const category = document.getElementById("product-category").value;
+    const price = parseFloat(document.getElementById("product-price").value);
+    const files = fileInput.files;
+
+    if (!name || isNaN(price)) {
+      alert("Fill all fields");
+      return;
     }
 
-    function saveProducts(products) {
-      localStorage.setItem("stylehub_products", JSON.stringify(products));
-      renderProducts();
+    if (files.length === 0) {
+      alert("Upload at least one image");
+      return;
     }
 
-    function renderProducts() {
-      const products = loadProducts();
-      const tbody = document.getElementById("product-table").querySelector("tbody");
-      tbody.innerHTML = "";
-
-      products.forEach((p, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${p.id}</td>
-          <td>${p.name}</td>
-          <td>${p.category}</td>
-          <td>$${p.price.toFixed(2)}</td>
-          <td><button class="btn-delete" data-id="${p.id}">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // attach delete handlers
-      document.querySelectorAll(".btn-delete").forEach(btn => {
-        btn.addEventListener("click", function () {
-          const id = parseInt(this.dataset.id);
-          const products = loadProducts();
-          const updated = products.filter(p => p.id !== id);
-          saveProducts(updated);
-        });
-      });
-    }
-
-    // handle image upload and preview
-    const fileInput = document.getElementById("product-images-upload");
-    const preview = document.getElementById("image-preview");
-
-    fileInput.addEventListener("change", function() {
-      preview.innerHTML = "";
-
-      const files = Array.from(fileInput.files);
-      files.forEach(file => {
+    // convert images to base64
+    const promises = Array.from(files).map(file => {
+      return new Promise(resolve => {
         const reader = new FileReader();
-
-        reader.onload = function(e) {
-          const img = document.createElement("img");
-          img.src = e.target.result;  // base64 URL
-          preview.appendChild(img);
-        };
-
+        reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(file);
       });
     });
 
-    // add product form
-    document.getElementById("product-form").addEventListener("submit", function(e) {
-      e.preventDefault();
+    Promise.all(promises).then(images => {
 
-      const id = parseInt(document.getElementById("product-id").value);
-      const name = document.getElementById("product-name").value.trim();
-      const category = document.getElementById("product-category").value;
-      const price = parseFloat(document.getElementById("product-price").value);
-      const files = fileInput.files;
-
-      if (!name || isNaN(id) || isNaN(price)) {
-        alert("Please fill in all fields correctly.");
-        return;
-      }
-
-      if (files.length === 0) {
-        alert("Please upload at least one image.");
-        return;
-      }
-
-      // convert files to base64 data URLs
-      const imagePromises = Array.from(files).map(file => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-      });
-
-      Promise.all(imagePromises).then(images => {
-        const products = loadProducts();
-
-        // prevent duplicate ID
-        if (products.some(p => p.id === id)) {
-          alert("Product with this ID already exists.");
-          return;
-        }
-
-        const newProduct = {
-          id,
-          name,
-          category,
-          price,
-          images  // array of base64 image URLs
-        };
-
-        products.push(newProduct);
-        saveProducts(products);
-
-        // reset form
+      db.collection("stylehub_products").add({
+        name,
+        category,
+        price,
+        images
+      }).then(() => {
+        alert("Product Added ✅");
         this.reset();
         preview.innerHTML = "";
+        renderProducts();
       });
-    });
 
-    // load on page open
-    renderProducts();
-  </script>
+    });
+  });
+
+  // 🔥 LOAD PRODUCTS FROM FIREBASE
+  function renderProducts() {
+    const tbody = document.querySelector("#product-table tbody");
+    tbody.innerHTML = "";
+
+    db.collection("stylehub_products").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const p = doc.data();
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${doc.id}</td>
+          <td>${p.name}</td>
+          <td>${p.category}</td>
+          <td>$${Number(p.price).toFixed(2)}</td>
+          <td><button data-id="${doc.id}" class="btn-delete">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // delete
+      document.querySelectorAll(".btn-delete").forEach(btn => {
+        btn.onclick = () => {
+          db.collection("stylehub_products").doc(btn.dataset.id).delete()
+          .then(() => renderProducts());
+        };
+      });
+
+    });
+  }
+
+  renderProducts();
+
+});
+</script>
+
 </body>
 </html>
