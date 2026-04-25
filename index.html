@@ -269,6 +269,116 @@
         container.appendChild(col);
       });
     }
+    <script>
+  // 🔥 Firebase config (YOU MUST REPLACE THIS WITH YOUR OWN FIREBASE PROJECT)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "XXXX",
+    appId: "XXXX"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 🔥 Load products from Firebase (NOT localStorage)
+  async function loadProducts() {
+    const snapshot = await db.collection("products").get();
+
+    if (snapshot.empty) {
+      // fallback demo data (first time only)
+      const defaultProducts = [
+        {
+          id: "1",
+          name: "Sneaker X Pro",
+          category: "shoes",
+          price: 89.99,
+          images: [
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+          ]
+        },
+        {
+          id: "2",
+          name: "Wireless Earbuds",
+          category: "gadgets",
+          price: 49.99,
+          images: [
+            "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80"
+          ]
+        },
+        {
+          id: "3",
+          name: "Floral Summer Dress",
+          category: "dresses",
+          price: 69.99,
+          images: [
+            "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=400&q=80"
+          ]
+        }
+      ];
+
+      defaultProducts.forEach(p => {
+        db.collection("products").add(p);
+      });
+
+      return defaultProducts;
+    }
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  }
+
+  // Filter buttons
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", function () {
+      filterBtns.forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+      renderProducts(this.dataset.category);
+    });
+  });
+
+  // Render products
+  async function renderProducts(category = "all") {
+    const products = await loadProducts();
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+
+    const filtered = category === "all"
+      ? products
+      : products.filter(p => p.category === category);
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:#777;">No products available</p>`;
+      return;
+    }
+
+    filtered.forEach(product => {
+      const col = document.createElement("a");
+      col.href = `product.html?id=${product.id}`;
+      col.target = "_blank";
+      col.classList.add("product");
+
+      col.innerHTML = `
+        <img class="product-img" src="${product.images[0]}" />
+        <div class="product-info">
+          <div class="product-name">${product.name}</div>
+          <div class="product-category">${product.category}</div>
+          <div class="product-price">$${product.price.toFixed(2)}</div>
+        </div>
+      `;
+
+      container.appendChild(col);
+    });
+  }
+
+  // initial load
+  renderProducts();
+</script>
 
     // render on load
     renderProducts();
