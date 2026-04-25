@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Detail – StyleHub</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body {
+      margin: 0;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 1rem 2rem;
+    }
+    header h1 {
+      margin: 0;
+    }
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .product-images {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .product-images img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 2px solid #ddd;
+    }
+    .product-info {
+      padding-top: 0.5rem;
+    }
+    .product-name {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .product-price {
+      font-size: 1.3rem;
+      color: #007bff;
+      font-weight: 600;
+    }
+    .btn-whatsapp {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1.6rem;
+      background: #25d366; /* WhatsApp green */
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-block;
+      text-decoration: none;
+      box-shadow: 0 3px 10px rgba(37, 211, 102, 0.3);
+    }
+    .btn-whatsapp:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>StyleHub – Product Detail</h1>
+  </header>
+
+  <main>
+    <div id="loading">Loading product...</div>
+    <div id="product-content" style="display: none;">
+      <div class="product-images" id="image-gallery"></div>
+      <div class="product-info">
+        <h2 class="product-name" id="product-name"></h2>
+        <div class="product-price" id="product-price"></div>
+      </div>
+
+      <!-- Buy Now via WhatsApp button -->
+      <a href="#" id="buy-now-btn" class="btn-whatsapp" target="_blank" rel="noopener">
+        Buy Now 
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 StyleHub – All rights reserved.
+  </footer>
+
+  <script>
+    function getQueryParam(key) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(key);
+    }
+
+    const products = JSON.parse(localStorage.getItem("stylehub_products") || "[]");
+    const idStr = getQueryParam("id");
+    const id = parseInt(idStr);
+
+    const product = products.find(p => p.id === id);
+
+    const loading = document.getElementById("loading");
+    const content = document.getElementById("product-content");
+
+    if (!product) {
+      loading.textContent = "Product not found.";
+      content.style.display = "none";
+    } else {
+      loading.style.display = "none";
+      content.style.display = "block";
+
+      const nameEl = document.getElementById("product-name");
+      const priceEl = document.getElementById("product-price");
+      const imageGallery = document.getElementById("image-gallery");
+
+      nameEl.textContent = product.name;
+      priceEl.textContent = `Price: $${product.price.toFixed(2)}`;
+
+      // render images
+      imageGallery.innerHTML = "";
+      product.images.forEach(imgUrl => {
+        const img = document.createElement("img");
+        img.src = imgUrl;
+        img.alt = product.name;
+        imageGallery.appendChild(img);
+      });
+
+      // create WhatsApp button link
+      const btn = document.getElementById("buy-now-btn");
+
+      // customize your WhatsApp number here (international format without + symbol)
+      const yourPhone = "91xxxxxxxxxx";  // CHANGE THIS: your WhatsApp number
+
+      const messageLines = [
+        "Order request from StyleHub",
+        "",
+        `Product: ${product.name}`,
+        `Category: ${product.category}`,
+        `Price: $${product.price.toFixed(2)}`,
+        "",
+        "Please include your name, address, and preferred size/color if applicable."
+      ];
+
+      const message = encodeURIComponent(messageLines.join("\n"));
+      const waUrl = `https://wa.me/${yourPhone}?text=${message}`;
+
+      btn.href = waUrl;
+    }
+  </script>
+</body>
+</html>
