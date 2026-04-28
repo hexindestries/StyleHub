@@ -3,122 +3,490 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StyleHub Admin Panel</title>
+  <title>StyleHub — Admin Panel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- FIX 1: Firebase scripts moved to <head>, outside any other script -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { margin: 0; background: #f1f3f5; color: #333; }
+    :root {
+      --bg:        #f7f5f0;
+      --surface:   #ffffff;
+      --surface2:  #f0ede6;
+      --border:    #e2ddd5;
+      --ink:       #1a1714;
+      --muted:     #9b9189;
+      --accent:    #b85c2a;
+      --accent-lt: #fdf0e8;
+      --green:     #2a7a4b;
+      --green-lt:  #e8f5ee;
+      --red:       #c0392b;
+      --red-lt:    #fdecea;
+      --radius:    12px;
+      --shadow:    0 2px 12px rgba(26,23,20,0.08);
+      --t:         0.22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.93rem;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─── */
     header {
-      background: #212529; color: white; padding: 1rem 2rem; text-align: center;
+      background: var(--ink);
+      color: #fff;
+      padding: 1.1rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    main {
-      max-width: 800px; margin: 2rem auto; padding: 1rem;
-      background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0.7rem;
     }
-    fieldset {
-      border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;
+
+    .brand h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
     }
-    legend { font-weight: 600; padding: 0 0.5rem; }
+
+    .brand span {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(184,92,42,0.15);
+      border: 1px solid rgba(184,92,42,0.25);
+      border-radius: 20px;
+      padding: 0.15rem 0.6rem;
+    }
+
+    .header-meta {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ─── LAYOUT ─── */
+    .page {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 1.8rem auto;
+      padding: 0 1.5rem 4rem;
+      align-items: start;
+    }
+
+    /* ─── PANEL / CARD ─── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1rem 1.3rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .panel-body { padding: 1.3rem; }
+
+    /* ─── FORM ─── */
+    .field { margin-bottom: 1rem; }
+
     label {
-      display: block; margin-top: 0.6rem; margin-bottom: 0.2rem; font-weight: 500;
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
     }
-    input, select { width: 100%; padding: 0.6rem;
-      border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      transition: border-color var(--t), box-shadow var(--t);
+      outline: none;
+      appearance: none;
     }
-    .btn {
-      padding: 0.7rem 1.2rem; border: none; border-radius: 4px;
-      background: #007bff; color: white; font-size: 1rem; cursor: pointer;
-      margin-top: 0.8rem;
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(184,92,42,0.12);
     }
-    .btn:hover { background: #0056b3; }
-    .product-list {
-      margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;
+
+    input.error { border-color: var(--red); }
+
+    .field-note {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
     }
-    .product-list table {
-      width: 100%; border-collapse: collapse;
+
+    /* ─── UPLOAD AREA ─── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--t), background var(--t);
+      position: relative;
     }
-    .product-list th, .product-list td {
-      padding: 0.6rem; text-align: left; border-bottom: 1px solid #ddd;
+
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-lt);
     }
-    .product-list th {
-      background: #f8f9fa; font-weight: 600;
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
     }
-    .upload-area {
-      border: 2px dashed #ddd; border-radius: 6px; padding: 1rem; text-align: center;
+
+    .upload-zone .upload-icon { font-size: 1.8rem; line-height: 1; }
+    .upload-zone p { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+    }
+
+    .preview-item {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      border: 1px solid var(--border);
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-item .remove-img {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ─── SUBMIT BUTTON ─── */
+    .btn-submit {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
       margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background var(--t), transform var(--t), opacity var(--t);
     }
-    .preview-gallery {
-      display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem;
+
+    .btn-submit:hover:not(:disabled) { background: #9e4b21; }
+    .btn-submit:active:not(:disabled) { transform: scale(0.98); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--ink);
+      color: #fff;
+      padding: 0.7rem 1.4rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 200;
+      pointer-events: none;
+      white-space: nowrap;
     }
-    .preview-gallery img {
-      width: 100px; height: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { background: var(--green); }
+    #toast.error   { background: var(--red); }
+
+    /* ─── TABLE AREA ─── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: var(--surface2);
+    }
+
+    th {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      transition: background var(--t);
+    }
+
+    tbody tr:hover { background: var(--surface2); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .td-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    .td-thumb-placeholder {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: capitalize;
+    }
+
+    .badge-shoes   { background: #e8f0fe; color: #3c5bbf; }
+    .badge-gadgets { background: #fef3e8; color: #b06016; }
+    .badge-dresses { background: #fce8f3; color: #a0286e; }
+
+    .btn-delete {
+      padding: 0.35rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all var(--t);
+    }
+
+    .btn-delete:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-lt);
+    }
+
+    /* ─── STATES ─── */
+    .empty-state, .loading-state {
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--muted);
+    }
+
+    .empty-state .icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
+    .empty-state p { font-size: 0.88rem; }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 0.7rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 820px) {
+      .page { grid-template-columns: 1fr; }
+      header { padding: 1rem 1.2rem; }
     }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>StyleHub Admin Panel</h1>
-    <p>Add or manage products (using localStorage)</p>
-  </header>
 
-  <main>
-    <form id="product-form">
-      <fieldset>
-        <legend>Add New Product</legend>
+<header>
+  <div class="brand">
+    <h1>StyleHub</h1>
+    <span>Admin</span>
+  </div>
+  <div class="header-meta">Firebase · Firestore</div>
+</header>
 
-        <label>ID (unique number)</label>
-        <input type="number" id="product-id" required />
+<div class="page">
 
-        <label>Name</label>
-        <input type="text" id="product-name" required />
+  <!-- ─── ADD PRODUCT FORM ─── -->
+  <aside>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Add Product</span>
+      </div>
+      <div class="panel-body">
+        <div id="form-error" style="display:none; background:var(--red-lt); color:var(--red); border:1px solid var(--red); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.83rem; margin-bottom:1rem;"></div>
 
-        <label>Category</label>
-        <select id="product-category" required>
-          <option value="shoes">Shoes</option>
-          <option value="gadgets">Gadgets</option>
-          <option value="dresses">Dresses</option>
-        </select>
-
-        <label>Price ($)</label>
-        <input type="number" step="0.01" id="product-price" required />
-
-        <!-- image upload from computer -->
-        <label>Upload Images</label>
-        <div class="upload-area">
-          <input type="file" id="product-images-upload" multiple accept="image/*" />
-          <p>Choose one or more images from your computer.</p>
+        <div class="field">
+          <label for="product-name">Name</label>
+          <input type="text" id="product-name" placeholder="e.g. Air Max 90" />
         </div>
 
-        <div class="preview-gallery" id="image-preview"></div>
+        <div class="field">
+          <label for="product-category">Category</label>
+          <select id="product-category">
+            <option value="shoes">👟 Shoes</option>
+            <option value="gadgets">⚡ Gadgets</option>
+            <option value="dresses">👗 Dresses</option>
+          </select>
+        </div>
 
-        <button type="submit" class="btn">Add Product</button>
-      </fieldset>
-    </form>
+        <div class="field">
+          <label for="product-price">Price (USD)</label>
+          <input type="number" id="product-price" step="0.01" min="0" placeholder="0.00" />
+        </div>
 
-    <div class="product-list">
-      <h3>Existing Products</h3>
-      <table id="product-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+        <div class="field">
+          <label>Images</label>
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="product-images-upload" multiple accept="image/*" />
+            <div class="upload-icon">🖼</div>
+            <p>Click or drag images here</p>
+          </div>
+          <!-- FIX: note about base64 / size limit -->
+          <p class="field-note">⚠️ Images are stored as base64. Keep each file under 300 KB to stay within Firestore's 1 MB document limit.</p>
+          <div class="preview-grid" id="image-preview"></div>
+        </div>
+
+        <button class="btn-submit" id="submit-btn" type="button">
+          <span id="submit-label">Add Product</span>
+        </button>
+      </div>
     </div>
-  </main>
+  </aside>
 
-  <script>
-   <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- ─── PRODUCT TABLE ─── -->
+  <section>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">All Products</span>
+        <span id="product-count" style="font-size:0.78rem; color:var(--muted);"></span>
+      </div>
+      <div id="table-container">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading products…</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
 
+  /* ─── Firebase init ─── */
   const firebaseConfig = {
     apiKey: "AIzaSyDDyJw-dYYcd1i02YVBkrTrqD01tF--w00",
     authDomain: "stylehub-7fb69.firebaseapp.com",
@@ -132,103 +500,267 @@ document.addEventListener("DOMContentLoaded", function () {
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const fileInput = document.getElementById("product-images-upload");
-  const preview = document.getElementById("image-preview");
+  /* ─── DOM refs ─── */
+  const nameInput     = document.getElementById("product-name");
+  const categoryInput = document.getElementById("product-category");
+  const priceInput    = document.getElementById("product-price");
+  const fileInput     = document.getElementById("product-images-upload");
+  const previewGrid   = document.getElementById("image-preview");
+  const submitBtn     = document.getElementById("submit-btn");
+  const submitLabel   = document.getElementById("submit-label");
+  const formError     = document.getElementById("form-error");
+  const tableContainer = document.getElementById("table-container");
+  const countBadge    = document.getElementById("product-count");
+  const uploadZone    = document.getElementById("upload-zone");
+  const toast         = document.getElementById("toast");
 
-  // 🔄 PREVIEW IMAGES (same as before)
-  fileInput.addEventListener("change", function() {
-    preview.innerHTML = "";
-    Array.from(fileInput.files).forEach(file => {
+  let selectedFiles = [];   // track files separately so we can remove individually
+  let toastTimer;
+
+  /* ─── Toast helper ─── */
+  function showToast(msg, type = "success") {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.className = "show " + type;
+    toastTimer = setTimeout(() => { toast.className = ""; }, 3200);
+  }
+
+  /* ─── Form error helper ─── */
+  function showFormError(msg) {
+    formError.textContent = msg;
+    formError.style.display = "block";
+  }
+
+  function clearFormError() {
+    formError.style.display = "none";
+    formError.textContent = "";
+  }
+
+  /* ─── Image preview ─── */
+  function renderPreviews() {
+    previewGrid.innerHTML = "";
+    selectedFiles.forEach((file, i) => {
       const reader = new FileReader();
       reader.onload = e => {
+        const item = document.createElement("div");
+        item.className = "preview-item";
         const img = document.createElement("img");
         img.src = e.target.result;
-        preview.appendChild(img);
+        img.alt = file.name;
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-img";
+        removeBtn.textContent = "✕";
+        removeBtn.title = "Remove image";
+        removeBtn.addEventListener("click", () => {
+          selectedFiles.splice(i, 1);
+          renderPreviews();
+        });
+        item.appendChild(img);
+        item.appendChild(removeBtn);
+        previewGrid.appendChild(item);
       };
       reader.readAsDataURL(file);
     });
-  });
-
-  // 🔥 ADD PRODUCT (NOW SAVES TO FIREBASE)
-  document.getElementById("product-form").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    const name = document.getElementById("product-name").value.trim();
-    const category = document.getElementById("product-category").value;
-    const price = parseFloat(document.getElementById("product-price").value);
-    const files = fileInput.files;
-
-    if (!name || isNaN(price)) {
-      alert("Fill all fields");
-      return;
-    }
-
-    if (files.length === 0) {
-      alert("Upload at least one image");
-      return;
-    }
-
-    // convert images to base64
-    const promises = Array.from(files).map(file => {
-      return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(promises).then(images => {
-
-      db.collection("stylehub_products").add({
-        name,
-        category,
-        price,
-        images
-      }).then(() => {
-        alert("Product Added ✅");
-        this.reset();
-        preview.innerHTML = "";
-        renderProducts();
-      });
-
-    });
-  });
-
-  // 🔥 LOAD PRODUCTS FROM FIREBASE
-  function renderProducts() {
-    const tbody = document.querySelector("#product-table tbody");
-    tbody.innerHTML = "";
-
-    db.collection("stylehub_products").get().then(snapshot => {
-      snapshot.forEach(doc => {
-        const p = doc.data();
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${doc.id}</td>
-          <td>${p.name}</td>
-          <td>${p.category}</td>
-          <td>$${Number(p.price).toFixed(2)}</td>
-          <td><button data-id="${doc.id}" class="btn-delete">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // delete
-      document.querySelectorAll(".btn-delete").forEach(btn => {
-        btn.onclick = () => {
-          db.collection("stylehub_products").doc(btn.dataset.id).delete()
-          .then(() => renderProducts());
-        };
-      });
-
-    });
   }
 
-  renderProducts();
+  fileInput.addEventListener("change", function () {
+    selectedFiles = [...selectedFiles, ...Array.from(this.files)];
+    this.value = ""; // reset so same file can be re-added after removal
+    renderPreviews();
+  });
 
-});
+  /* ─── Drag-and-drop ─── */
+  uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("drag-over"); });
+  uploadZone.addEventListener("dragleave", ()  => uploadZone.classList.remove("drag-over"));
+  uploadZone.addEventListener("drop", e => {
+    e.preventDefault();
+    uploadZone.classList.remove("drag-over");
+    const dropped = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    selectedFiles = [...selectedFiles, ...dropped];
+    renderPreviews();
+  });
+
+  /* ─── Validation ─── */
+  function validate() {
+    clearFormError();
+    const name  = nameInput.value.trim();
+    const price = parseFloat(priceInput.value);
+
+    if (!name) {
+      showFormError("Product name is required.");
+      nameInput.classList.add("error");
+      nameInput.focus();
+      return false;
+    }
+    nameInput.classList.remove("error");
+
+    if (isNaN(price) || price < 0) {
+      showFormError("Enter a valid price (0 or more).");
+      priceInput.classList.add("error");
+      priceInput.focus();
+      return false;
+    }
+    priceInput.classList.remove("error");
+
+    if (selectedFiles.length === 0) {
+      showFormError("Upload at least one product image.");
+      return false;
+    }
+    return true;
+  }
+
+  /* ─── Submit ─── */
+  submitBtn.addEventListener("click", async function () {
+    if (!validate()) return;
+
+    submitBtn.disabled = true;
+    submitLabel.textContent = "Saving…";
+
+    try {
+      // FIX: convert all images to base64 (warn user to keep files small)
+      const images = await Promise.all(selectedFiles.map(file =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload  = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Failed to read " + file.name));
+          reader.readAsDataURL(file);
+        })
+      ));
+
+      await db.collection("stylehub_products").add({
+        name:     nameInput.value.trim(),
+        category: categoryInput.value,
+        price:    parseFloat(priceInput.value),
+        images,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      showToast("✅ Product added!");
+      nameInput.value  = "";
+      priceInput.value = "";
+      selectedFiles    = [];
+      renderPreviews();
+      clearFormError();
+      renderTable();
+
+    } catch (err) {
+      console.error("Add product error:", err);
+      showFormError("Failed to save: " + (err.message || "unknown error"));
+      showToast("❌ Failed to add product", "error");
+    } finally {
+      submitBtn.disabled   = false;
+      submitLabel.textContent = "Add Product";
+    }
+  });
+
+  /* ─── Category badge ─── */
+  function categoryBadge(cat) {
+    const icons = { shoes: "👟", gadgets: "⚡", dresses: "👗" };
+    return `<span class="badge badge-${cat}">${icons[cat] || "✨"} ${cat}</span>`;
+  }
+
+  /* ─── Safe price ─── */
+  function fmtPrice(v) {
+    const n = Number(v);
+    return isNaN(n) ? "—" : "$" + n.toFixed(2);
+  }
+
+  /* ─── Delete with confirmation ─── */
+  async function deleteProduct(id, name) {
+    // FIX: confirm before deleting
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    try {
+      await db.collection("stylehub_products").doc(id).delete();
+      showToast("🗑 Product deleted");
+      renderTable();
+    } catch (err) {
+      console.error("Delete error:", err);
+      showToast("❌ Delete failed", "error");
+    }
+  }
+
+  /* ─── Render table ─── */
+  async function renderTable() {
+    tableContainer.innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading…</p>
+      </div>`;
+    countBadge.textContent = "";
+
+    try {
+      const snapshot = await db.collection("stylehub_products")
+                                .orderBy("createdAt", "desc")
+                                .get();
+
+      const products = [];
+      snapshot.forEach(doc => products.push({ id: doc.id, ...doc.data() }));
+      countBadge.textContent = products.length + " product" + (products.length !== 1 ? "s" : "");
+
+      if (products.length === 0) {
+        tableContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📦</div>
+            <p>No products yet. Add one on the left!</p>
+          </div>`;
+        return;
+      }
+
+      const rows = products.map(p => {
+        const thumb = Array.isArray(p.images) && p.images[0]
+          ? `<img class="td-thumb" src="${p.images[0]}" alt="${p.name || ''}" loading="lazy" />`
+          : `<div class="td-thumb-placeholder">${{ shoes:"👟", gadgets:"⚡", dresses:"👗" }[p.category] || "📦"}</div>`;
+
+        return `
+          <tr>
+            <td>${thumb}</td>
+            <td>${p.name || "<em>—</em>"}</td>
+            <td>${categoryBadge(p.category)}</td>
+            <td>${fmtPrice(p.price)}</td>
+            <td>
+              <button class="btn-delete" data-id="${p.id}" data-name="${(p.name || "").replace(/"/g,'&quot;')}">
+                Delete
+              </button>
+            </td>
+          </tr>`;
+      }).join("");
+
+      tableContainer.innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+
+      // Attach delete listeners after render
+      tableContainer.querySelectorAll(".btn-delete").forEach(btn => {
+        btn.addEventListener("click", () => deleteProduct(btn.dataset.id, btn.dataset.name));
+      });
+
+    } catch (err) {
+      console.error("Load error:", err);
+      tableContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <p>Failed to load products. Check your connection.</p>
+        </div>`;
+      showToast("❌ Could not load products", "error");
+    }
+  }
+
+  /* ─── Init ─── */
+  renderTable();
+
+})();
 </script>
-
 </body>
 </html>
