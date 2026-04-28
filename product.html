@@ -3,166 +3,603 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Detail – StyleHub</title>
+  <title>Product – StyleHub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- FIX 7: Firebase SDK loaded in <head> -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    :root {
+      --bg:        #0c0c0c;
+      --surface:   #141414;
+      --surface2:  #1c1c1c;
+      --border:    rgba(255,255,255,0.08);
+      --text:      #f2ede6;
+      --muted:     #777;
+      --accent:    #c8a96e;
+      --accent2:   #e8c99e;
+      --green:     #25d366;
+      --radius:    14px;
+      --t:         0.28s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      background: #f8f9fa;
-      color: #333;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
     }
+
+    /* ── Noise ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
     header {
-      background: #1a1a2e;
-      color: white;
-      padding: 1rem 2rem;
-    }
-    header h1 {
-      margin: 0;
-    }
-    main {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .product-images {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(12,12,12,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2.5rem;
       display: flex;
-      gap: 0.8rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
+      align-items: center;
+      gap: 1.2rem;
     }
-    .product-images img {
-      width: 200px;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 2px solid #ddd;
-    }
-    .product-info {
-      padding-top: 0.5rem;
-    }
-    .product-name {
-      font-size: 1.6rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-    .product-price {
-      font-size: 1.3rem;
-      color: #007bff;
-      font-weight: 600;
-    }
-    .btn-whatsapp {
-      margin-top: 1.5rem;
-      padding: 0.9rem 1.6rem;
-      background: #25d366; /* WhatsApp green */
-      color: white;
-      border: none;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-block;
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
       text-decoration: none;
-      box-shadow: 0 3px 10px rgba(37, 211, 102, 0.3);
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      transition: color var(--t);
     }
-    .btn-whatsapp:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+
+    .back-link:hover { color: var(--accent); }
+
+    .header-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
     }
-    footer {
+
+    .header-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+
+    /* ── PAGE ── */
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* ── STATES ── */
+    .state-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 55vh;
+      gap: 1rem;
+      color: var(--muted);
       text-align: center;
-      padding: 1.5rem 0;
-      color: #666;
-      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .state-icon { font-size: 2.8rem; }
+    .state-title { font-size: 1.1rem; color: var(--text); font-weight: 600; }
+    .state-sub { font-size: 0.88rem; }
+
+    .btn-back-shop {
+      margin-top: 0.5rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 30px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background var(--t), color var(--t);
+      display: inline-block;
+    }
+
+    .btn-back-shop:hover { background: var(--accent); color: #0c0c0c; }
+
+    /* ── PRODUCT LAYOUT ── */
+    #product-content {
+      display: none; /* shown by JS */
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .product-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      align-items: start;
+    }
+
+    /* ── IMAGE GALLERY ── */
+    .gallery { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .main-image-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: zoom-in;
+      position: relative;
+    }
+
+    .main-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s var(--t);
+    }
+
+    .main-image-wrap:hover img { transform: scale(1.04); }
+
+    .thumbnails {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color var(--t), opacity var(--t);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb.active { border-color: var(--accent); }
+    .thumb:hover:not(.active) { border-color: rgba(200,169,110,0.4); opacity: 0.8; }
+
+    /* ── PRODUCT INFO ── */
+    .product-info { display: flex; flex-direction: column; gap: 1.2rem; }
+
+    .product-category-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(200,169,110,0.1);
+      border: 1px solid rgba(200,169,110,0.2);
+      border-radius: 20px;
+      padding: 0.25rem 0.8rem;
+      width: fit-content;
+    }
+
+    .product-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+    }
+
+    .product-price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      padding: 1.1rem 1.3rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .price-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .price-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── WhatsApp button ── */
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 1rem 1.8rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.97rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(37, 211, 102, 0.25);
+      transition: transform var(--t), box-shadow var(--t), filter var(--t);
+      width: 100%;
+    }
+
+    .btn-whatsapp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(37, 211, 102, 0.38);
+      filter: brightness(1.06);
+    }
+
+    .btn-whatsapp:active { transform: scale(0.98); }
+
+    .wa-icon { font-size: 1.2rem; line-height: 1; }
+
+    .order-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ── LIGHTBOX ── */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      cursor: zoom-out;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .lightbox.open { display: flex; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 88vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      color: rgba(255,255,255,0.6);
+      font-size: 1.6rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      line-height: 1;
+      transition: color var(--t);
+    }
+
+    .lightbox-close:hover { color: #fff; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 700px) {
+      .product-layout { grid-template-columns: 1fr; gap: 2rem; }
+      header { padding: 0.9rem 1.2rem; }
+      .page-wrap { padding: 1.8rem 1rem 4rem; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>StyleHub – Product Detail</h1>
-  </header>
 
-  <main>
-    <div id="loading">Loading product...</div>
-    <div id="product-content" style="display: none;">
-      <div class="product-images" id="image-gallery"></div>
-      <div class="product-info">
-        <h2 class="product-name" id="product-name"></h2>
-        <div class="product-price" id="product-price"></div>
+<header>
+  <a href="index.html" class="back-link">← Back</a>
+  <div class="header-divider"></div>
+  <a href="index.html" class="header-brand">StyleHub</a>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Loading state -->
+  <div id="loading" class="state-center">
+    <div class="spinner"></div>
+    <p>Loading product…</p>
+  </div>
+
+  <!-- Error state (hidden by default) -->
+  <div id="error-state" class="state-center" style="display:none;">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">Product not found</div>
+    <p class="state-sub">This product may have been removed or the link is invalid.</p>
+    <a href="index.html" class="btn-back-shop">← Back to Shop</a>
+  </div>
+
+  <!-- Product content (hidden until loaded) -->
+  <div id="product-content">
+    <div class="product-layout">
+
+      <!-- Gallery -->
+      <div class="gallery">
+        <div class="main-image-wrap" id="main-image-wrap">
+          <img id="main-image" src="" alt="" />
+        </div>
+        <div class="thumbnails" id="thumbnails"></div>
       </div>
 
-      <!-- Buy Now via WhatsApp button -->
-      <a href="#" id="buy-now-btn" class="btn-whatsapp" target="_blank" rel="noopener">
-        Buy Now 
-      </a>
+      <!-- Info -->
+      <div class="product-info">
+        <span class="product-category-tag" id="category-tag"></span>
+        <h1 class="product-name" id="product-name"></h1>
+
+        <div class="product-price-block">
+          <span class="price-label">Price</span>
+          <span class="price-value" id="product-price"></span>
+        </div>
+
+        <div class="divider"></div>
+
+        <a id="buy-now-btn" class="btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer">
+          <span class="wa-icon">💬</span>
+          Order via WhatsApp
+        </a>
+
+        <p class="order-note">
+          Tap to open WhatsApp. Include your name, address, and size/colour preference.
+        </p>
+      </div>
     </div>
-  </main>
+  </div>
 
-  <footer>
-    &copy; 2026 StyleHub – All rights reserved.
-  </footer>
+</div><!-- /.page-wrap -->
 
-  <script>
-    function getQueryParam(key) {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(key);
-    }
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button class="lightbox-close" id="lightbox-close" aria-label="Close">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
 
-    const products = JSON.parse(localStorage.getItem("stylehub_products") || "[]");
-    const idStr = getQueryParam("id");
-    const id = parseInt(idStr);
+<script>
+(function () {
 
-    const product = products.find(p => p.id === id);
+  /* ── Firebase init ── */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDyJw-dYYcd1i02YVBkrTrqD01tF--w00",
+    authDomain: "stylehub-7fb69.firebaseapp.com",
+    projectId: "stylehub-7fb69",
+    storageBucket: "stylehub-7fb69.firebasestorage.app",
+    messagingSenderId: "1051134155130",
+    appId: "1:1051134155130:web:39dfb1b9171b7911c15ec3",
+    measurementId: "G-LZNG900PQ4"
+  };
 
-    const loading = document.getElementById("loading");
-    const content = document.getElementById("product-content");
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-    if (!product) {
-      loading.textContent = "Product not found.";
-      content.style.display = "none";
+  /* ── DOM refs ── */
+  const loadingEl    = document.getElementById("loading");
+  const errorEl      = document.getElementById("error-state");
+  const contentEl    = document.getElementById("product-content");
+  const mainImg      = document.getElementById("main-image");
+  const mainWrap     = document.getElementById("main-image-wrap");
+  const thumbsEl     = document.getElementById("thumbnails");
+  const nameEl       = document.getElementById("product-name");
+  const priceEl      = document.getElementById("product-price");
+  const catTag       = document.getElementById("category-tag");
+  const buyBtn       = document.getElementById("buy-now-btn");
+  const lightbox     = document.getElementById("lightbox");
+  const lightboxImg  = document.getElementById("lightbox-img");
+  const lightboxClose= document.getElementById("lightbox-close");
+
+  const YOUR_WHATSAPP = "919567231759"; // ← change to your number
+
+  /* ── Helpers ── */
+  // FIX 3: safe price formatter
+  function fmtPrice(v) {
+    const n = Number(v);
+    return isNaN(n) ? "—" : "$" + n.toFixed(2);
+  }
+
+  function categoryIcon(cat) {
+    return { shoes: "👟", gadgets: "⚡", dresses: "👗" }[cat] || "✨";
+  }
+
+  function showError() {
+    loadingEl.style.display = "none";
+    contentEl.style.display = "none";
+    errorEl.style.display   = "flex";
+  }
+
+  function showContent() {
+    loadingEl.style.display = "none";
+    errorEl.style.display   = "none";
+    contentEl.style.display = "block";
+  }
+
+  /* ── Lightbox ── */
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt;
+    lightbox.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightbox.addEventListener("click", e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+
+  /* ── Gallery ── */
+  function setActiveImage(src, alt, thumbIndex) {
+    mainImg.src = src;
+    mainImg.alt = alt;
+    thumbsEl.querySelectorAll(".thumb").forEach((t, i) => {
+      t.classList.toggle("active", i === thumbIndex);
+    });
+  }
+
+  /* ── Build product UI ── */
+  function renderProduct(p) {
+    // FIX 4: guard missing images array
+    const images = Array.isArray(p.images) && p.images.length ? p.images : [];
+
+    // name
+    nameEl.textContent = p.name || "Unnamed Product";
+    document.title     = (p.name || "Product") + " — StyleHub";
+
+    // category tag
+    catTag.innerHTML = `${categoryIcon(p.category)} ${p.category || "item"}`;
+
+    // FIX 3: safe price
+    priceEl.textContent = fmtPrice(p.price);
+
+    // main image
+    if (images.length) {
+      mainImg.src = images[0];
+      mainImg.alt = p.name || "Product image";
     } else {
-      loading.style.display = "none";
-      content.style.display = "block";
-
-      const nameEl = document.getElementById("product-name");
-      const priceEl = document.getElementById("product-price");
-      const imageGallery = document.getElementById("image-gallery");
-
-      nameEl.textContent = product.name;
-      priceEl.textContent = `Price: $${product.price.toFixed(2)}`;
-
-      // render images
-      imageGallery.innerHTML = "";
-      product.images.forEach(imgUrl => {
-        const img = document.createElement("img");
-        img.src = imgUrl;
-        img.alt = product.name;
-        imageGallery.appendChild(img);
-      });
-
-      // create WhatsApp button link
-      const btn = document.getElementById("buy-now-btn");
-
-      // customize your WhatsApp number here (international format without + symbol)
-      const yourPhone = "919567231759";  // CHANGE THIS: your WhatsApp number
-
-      const messageLines = [
-        "Order request from StyleHub",
-        "",
-        `Product: ${product.name}`,
-        `Category: ${product.category}`,
-        `Price: $${product.price.toFixed(2)}`,
-        "",
-        "Please include your name, address, and preferred size/color if applicable."
-      ];
-
-      const message = encodeURIComponent(messageLines.join("\n"));
-      const waUrl = `https://wa.me/${yourPhone}?text=${message}`;
-
-      btn.href = waUrl;
+      mainImg.src = "";
+      mainImg.alt = "No image available";
+      mainWrap.style.background = "#1c1c1c";
     }
-  </script>
+
+    // thumbnails (only show if >1 image)
+    thumbsEl.innerHTML = "";
+    if (images.length > 1) {
+      images.forEach((src, i) => {
+        const wrap = document.createElement("div");
+        wrap.className = "thumb" + (i === 0 ? " active" : "");
+        wrap.setAttribute("role", "button");
+        wrap.setAttribute("aria-label", `View image ${i + 1}`);
+        wrap.setAttribute("tabindex", "0");
+
+        const img = document.createElement("img");
+        img.src     = src;
+        img.alt     = `${p.name || "Product"} image ${i + 1}`;   // FIX 5: unique alt
+        img.loading = "lazy";
+
+        wrap.appendChild(img);
+        wrap.addEventListener("click", () => setActiveImage(src, img.alt, i));
+        wrap.addEventListener("keydown", e => { if (e.key === "Enter") setActiveImage(src, img.alt, i); });
+        thumbsEl.appendChild(wrap);
+      });
+    }
+
+    // lightbox on main image click
+    mainWrap.addEventListener("click", () => {
+      if (mainImg.src) openLightbox(mainImg.src, mainImg.alt);
+    });
+
+    // FIX 2: ID is a Firestore string — no parseInt needed; used as-is
+    // WhatsApp message
+    const price = fmtPrice(p.price);
+    const msg = encodeURIComponent(
+      `Order request from StyleHub\n\nProduct: ${p.name}\nCategory: ${p.category}\nPrice: ${price}\n\nPlease reply with your name, delivery address, and size/colour preference.`
+    );
+
+    // FIX 6: set real href (not #) only after product is confirmed
+    buyBtn.href = `https://wa.me/${YOUR_WHATSAPP}?text=${msg}`;
+
+    showContent();
+  }
+
+  /* ── Load from Firestore ── */
+  async function init() {
+    // FIX 1 & 2: read ID as raw string from URL (Firestore doc IDs are strings)
+    const params = new URLSearchParams(window.location.search);
+    const id     = params.get("id");
+
+    if (!id) { showError(); return; }
+
+    try {
+      const doc = await db.collection("stylehub_products").doc(id).get();
+
+      if (!doc.exists) { showError(); return; }
+
+      renderProduct({ id: doc.id, ...doc.data() });
+
+    } catch (err) {
+      console.error("Failed to load product:", err);
+      showError();
+    }
+  }
+
+  init();
+
+})();
+</script>
 </body>
 </html>
